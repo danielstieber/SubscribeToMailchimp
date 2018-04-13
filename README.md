@@ -57,7 +57,7 @@ $mc->subscribe($email, $subscriber);
 In case of trouble check your ProcessWire warning logs.
 
 ### I can't see the subscriber in the list
-If you have enabled double opt-in (it is enabled by default) you will only see the 
+If you have enabled double opt-in (it is enabled by default) you will not see the subscriber, until he confirmed the subscription in the email sent by Mailchimp
 
 ### I get an error in my ProccessWire warning logs
 * Check if you have the right List ID and API Key.
