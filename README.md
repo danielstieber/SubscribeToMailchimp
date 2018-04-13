@@ -3,7 +3,7 @@ Lightweight module for ProcessWire that let you subscribe a user to a mailchimp 
 
 ## How To Install
 1. Download the [zip file](https://github.com/danielstieber/SubscribeToMailchimp/archive/master.zip) at Github or clone directly the repo into your `site/modules`
-2. If you dowloaded the `zip file`, extract it in your `sites/modules` directory.
+2. If you downloaded the `zip file`, extract it in your `sites/modules` directory.
 3. You might have to change the folders name to 'SubscribeToMailchimp'.
 4. Goto the modules admin page, click on refresh and install it.
 
@@ -17,11 +17,11 @@ Lightweight module for ProcessWire that let you subscribe a user to a mailchimp 
 ![module settings](https://i.imgur.com/RcKqzEt.png)
 
 ## Usage
-To use the module, you need to load it into you template:
+To use the module, you need to load it into your template:
 ```PHP
 $mc = $modules->get("SubscribeToMailchimp");
 ```
-Now you can pass an email adress to the module and it will try to edit (if the user exists) or create a new subscriber in your list.
+Now you can pass an email address to the module and it will try to edit (if the user exists) or create a new subscriber in your list.
 ```PHP
 $mc->subscribe('john.doe@example.com');
 ```
@@ -35,8 +35,8 @@ $mc->subscribe('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe'], 'a
 ```
 
 ## Important Notes
-* Use a sever-sided Validation like [Valitron](https://github.com/vlucas/valitron) before submitting fields
-* Make sure that you have set up your fields in your mailchimp list. You can do it at `Settings > List fields and *|MERGE|* tags`.  
+* This module does not do any data validation. Use a sever-sided validation like [Valitron](https://github.com/vlucas/valitron)
+* Make sure that you have set up your fields in your Mailchimp list. You can do it at `Settings > List fields and *|MERGE|* tags` 
 
 ## Example
 Example usage after a form is submitted on your page:
@@ -59,9 +59,9 @@ In case of trouble check your ProcessWire warning logs.
 ### I can't see the subscriber in the list
 If you have enabled double opt-in (it is enabled by default) you will only see the 
 
-### I get an error i my ProccessWire warning
+### I get an error in my ProccessWire warning logs
 * Check if you have the right List ID and API Key.
 * Check if you pass fields, that exist in you list.
-* Check if you pass a valid emaild adress.
+* Check if you pass a valid email address.
 
 Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/) for more Information

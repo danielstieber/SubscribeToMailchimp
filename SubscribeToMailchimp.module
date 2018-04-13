@@ -39,7 +39,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
-            if($http->send(str_replace($api.md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
+            if($http->send($api.md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
                 return true;
             } else { // create new, if udpate failed (contact does not exist)
                 if($this->double_opt_in)
@@ -93,7 +93,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             $f->name = $name;
             $f->label = $label;
             $f->attr('checked', empty($data[$name]) ? '' : 'checked');
-            $f->columnWidth = 50;
+            $f->columnWidth = 100;
             $form->add($f);
         }
 
