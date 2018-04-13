@@ -26,7 +26,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
 
         if(empty($list))
             $list = $this->default_list;
-        $api = "lists/".$list."/members/";
+        $api = str_replace('<dc>',$dc,self::SITE_ENDPOINT_BASE)."lists/".$list."/members/";
         if(isset($email)) {
             $param['email_address'] = $email;
             foreach ($data as $k => $v) {
@@ -39,14 +39,14 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
-            if($http->send(str_replace('<dc>',$dc,self::SITE_ENDPOINT_BASE).$api.md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
+            if($http->send(str_replace($api.md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
                 return true;
             } else { // create new, if udpate failed (contact does not exist)
                 if($this->double_opt_in)
                     $param['status'] = 'pending';
                 else
                     $param['status'] = 'subscribed';
-                $response = $http->send(str_replace('<dc>',$dc,self::SITE_ENDPOINT_BASE).$api, json_encode($param), 'POST');
+                $response = $http->send($api, json_encode($param), 'POST');
                 if($response !== false) {
                     return true;
                 } else {
