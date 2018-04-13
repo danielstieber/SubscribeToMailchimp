@@ -45,7 +45,7 @@ Example usage after a form is submitted on your page:
 $mc = $modules->get("SubmitToMailchimp");
 $email = $input->post->email;
 $subscriber = [
-  'FNAME' => $input->post->fistname,
+  'FNAME' => $input->post->firstname,
   'LNAME' => $input->post->lastname,
 ];
 $mc->submitForm($email, $subscriber);
