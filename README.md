@@ -13,6 +13,7 @@ Lightweight module for ProcessWire that let you subscribe a user to a mailchimp 
 3. Copy your API Key and paste it in the module settings (`Processwire > Modules > Site > SubscribeToMailchimp`).
 4. Back in Mailchimp, go to the list, where you want your new subscribers.
 5. Go to `Settings > List name and defaults`. Copy the List ID an paste it in to the module settings.
+
 ![module settings](https://i.imgur.com/RcKqzEt.png)
 
 ## Usage
@@ -62,4 +63,5 @@ If you have enabled double opt-in (it is enabled by default) you will only see t
 * Check if you have the right List ID and API Key.
 * Check if you pass fields, that exist in you list.
 * Check if you pass a valid emaild adress.
+
 Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/) for more Information
