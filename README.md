@@ -19,19 +19,19 @@ Lightweight module for ProcessWire that let you subscribe a user to a mailchimp 
 ## Usage
 To use the module, you need to load it into you template:
 ```PHP
-$mc = $modules->get("SubmitToMailchimp");
+$mc = $modules->get("SubscribeToMailchimp");
 ```
 Now you can pass an email adress to the module and it will try to edit (if the user exists) or create a new subscriber in your list.
 ```PHP
-$mc->submitForm('john.doe@example.com');
+$mc->subscribe('john.doe@example.com');
 ```
 You can also pass a data array, to add additional info.
 ```PHP
-$mc->submitForm('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe']);
+$mc->subscribe('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe']);
 ```
 You can even choose an alternative list, if you don't want this subscriber in your default list.
 ```PHP
-$mc->submitForm('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe'], 'abcdef1356'); // Subscribe to List ID abcdef1356
+$mc->subscribe('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe'], 'abcdef1356'); // Subscribe to List ID abcdef1356
 ```
 
 ## Important Notes
@@ -43,13 +43,13 @@ Example usage after a form is submitted on your page:
 ```PHP
 // ... validation of form data
 
-$mc = $modules->get("SubmitToMailchimp");
+$mc = $modules->get("SubscribeToMailchimp");
 $email = $input->post->email;
 $subscriber = [
   'FNAME' => $input->post->firstname,
   'LNAME' => $input->post->lastname,
 ];
-$mc->submitForm($email, $subscriber);
+$mc->subscribe($email, $subscriber);
 
 ```
 

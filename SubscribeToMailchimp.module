@@ -20,7 +20,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             "double_opt_in" => "checked",
         );
     }
-    public function submitForm(string $email, array $data = [], string $list = "") {
+    public function subscribe(string $email, array $data = [], string $list = "") {
         $dc = explode('-',$this->api_key)[1];
         $param = [];
 
