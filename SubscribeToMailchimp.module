@@ -4,8 +4,8 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
     static function getModuleInfo() {
         return [
             'title'   => 'Subscribe to Mailchimp',
-            'summary' => 'Create or update a subscriber in your Mailchimp mailing list.',
-            'version' => '0.0.1',
+            'summary' => 'Subscribe, update, unsubscribe or delete a user in your Mailchimp mailing list.',
+            'version' => '0.0.2',
             'author'  => 'danielstieber',
             'href'    => 'https://github.com/danielstieber/SubscribeToMailchimp',
             'icon'    => 'address-card',
@@ -13,21 +13,21 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             'singular'=> false
         ];
     }
-    const SITE_ENDPOINT_BASE = "https://<dc>.api.mailchimp.com/3.0/";
-
     static public function getDefaults() {
         return array(
             "double_opt_in" => "checked",
         );
     }
-    public function subscribe(string $email, array $data = [], string $list = "") {
-        $dc = explode('-',$this->api_key)[1];
+    private function getApiBase($list) {
+        $dc = explode('-',$this->api_key)[1]; // get the datacenter code from the api key, to use it in the api url
+        return "https://".$dc.".api.mailchimp.com/3.0/lists/".$list."/members/";
+    }
+    public function subscribe($email, array $data = [], $list = "") {
         $param = [];
-
-        if(empty($list))
+        if(empty($list)) // use default list from module settings, if no list is provided
             $list = $this->default_list;
-        $api = str_replace('<dc>',$dc,self::SITE_ENDPOINT_BASE)."lists/".$list."/members/";
         if(isset($email)) {
+            $api = $this->getApiBase($list);
             $param['email_address'] = $email;
             foreach ($data as $k => $v) {
                 if(!empty(trim($v))) { // avoid to override data of existing leads with empty field values
@@ -39,9 +39,9 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
-            if($http->send($api.md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
+            if($http->send($api . md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
                 return true;
-            } else { // create new, if udpate failed (contact does not exist)
+            } else { // create new, if update failed (=contact does not exist)
                 if($this->double_opt_in)
                     $param['status'] = 'pending';
                 else
@@ -50,17 +50,66 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 if($response !== false) {
                     return true;
                 } else {
-                    $this->warning("Mailchimp request not successful: " . $http->getError(), Notice::log); // Create warning in Processwire backend
+                    $this->warning("Mailchimp request not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
                     return false;
                 }
             }
         } else {
-            // Log an error, if a user is able to send a form without email.
+            // Log warning, if a user is able to send a form without email.
             $this->warning("A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.");
             return false;
         }
     }
-
+    public function unsubscribe($email, $list = "") {
+        $param = [];
+        if(empty($list)) // use default list from module settings, if no list is provided
+            $list = $this->default_list;
+        if(isset($email)) {
+            $api = $this->getApiBase($list);
+            $http = new WireHttp();
+            $http->setHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
+            ]);
+            $param['status'] = 'unsubscribed';
+            $response = $http->send($api . md5($email), json_encode($param), 'PATCH'); // update listentry with param 'unsubscribed'
+            if($response !== false) {
+                return true;
+            } else {
+                $this->warning("Mailchimp request not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
+                return false;
+            }
+            return true;
+        } else {
+            // Log warning, if a user is able to send a form without email.
+            $this->warning("A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.");
+            return false;
+        }
+    }
+    public function delete($email, $list = "") {
+        if(empty($list)) // use default list from module settings, if no list is provided
+            $list = $this->default_list;
+        if(isset($email)) {
+            $api = $this->getApiBase($list);
+            $http = new WireHttp();
+            $http->setHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
+            ]);
+            $response = $http->send($api . md5($email), [], 'DELETE'); // delete entry
+            if($response !== false) {
+                return true;
+            } else {
+                $this->warning("Mailchimp request not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
+                return false;
+            }
+            return true;
+        } else {
+            // Log warning, if a user is able to send a form without email.
+            $this->warning("A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.");
+            return false;
+        }
+    }
     public static function getModuleConfigInputfields(array $data)
     {
         $defaults = self::getDefaults();
@@ -96,7 +145,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             $f->columnWidth = 100;
             $form->add($f);
         }
-
         $wrap->add($form);   
         return $wrap;
     }
