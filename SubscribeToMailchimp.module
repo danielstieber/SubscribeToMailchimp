@@ -217,7 +217,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         }
         if(count($errors)) {
             $response = '';
-            foreach($a->getErrors() as $error) {
+            foreach($errors as $error) {
                 $response .= "<p style='color: red;'>{$error}</p>";
             }
         }
