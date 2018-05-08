@@ -1,11 +1,12 @@
 <?php
+
 class SubscribeToMailchimp extends WireData implements Module, ConfigurableModule {
 
     static function getModuleInfo() {
         return [
             'title'   => 'Subscribe to Mailchimp',
             'summary' => 'Subscribe, update, unsubscribe or delete a user in your Mailchimp mailing list.',
-            'version' => '0.0.2',
+            'version' => '0.0.3',
             'author'  => 'danielstieber',
             'href'    => 'https://github.com/danielstieber/SubscribeToMailchimp',
             'icon'    => 'address-card',
@@ -110,8 +111,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             return false;
         }
     }
-    public static function getModuleConfigInputfields(array $data)
-    {
+    public static function getModuleConfigInputfields(array $data) {
         $defaults = self::getDefaults();
         $data = array_merge($defaults, $data);
 
@@ -119,7 +119,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         $form = wire('modules')->get('InputfieldFieldset');
         $form->label = __('Mailchimp Configuration');
         $form->notes = __('Check out the README, if you have troubles to find the data for the fields above.');
-        $form->collapsed = Inputfield::collapsedPopulated;
+        $form->collapsed = wire('session')->mailchimp_test_settings ? Inputfield::collapsedNo : Inputfield::collapsedPopulated;
         $inputfields = [
             'api_key' => __('API Key'),
             'default_list' => __('Default list (can be overwritten by every form)'),
@@ -137,7 +137,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 $f->attr('value', $data[$name]);
             $form->add($f);
         }
-        foreach($checkboxfields as $name => $label) {       
+        foreach($checkboxfields as $name => $label) {
             $f = wire('modules')->get("InputfieldCheckbox");
             $f->name = $name;
             $f->label = $label;
@@ -145,8 +145,83 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             $f->columnWidth = 100;
             $form->add($f);
         }
-        $wrap->add($form);   
+
+        // TEST SETTINGS ||>>>
+        $f = wire('modules')->get('InputfieldCheckbox');
+        $f->attr('name', '_mailchimp_test_settings');
+        $f->label = __('Test your current settings!');
+        $f->description = __('Check this box and press save, to test the API Key and default list settings!');
+        $f->attr('value', 1);
+        $f->attr('checked', '');
+        $f->icon = 'heartbeat';
+        $f->columnWidth = wire('session')->mailchimp_test_settings ? 40 : 100;
+        $form->add($f);
+
+        if(wire('session')->mailchimp_test_settings) {
+            wire('session')->remove('mailchimp_test_settings');
+            $response = self::testSettings();
+            $f = wire('modules')->get('InputfieldMarkup');
+            $f->attr('name', '_test_response');
+            $f->label = __('Test Response: ');
+            $f->columnWidth = 60;
+            $f->attr('value', $response);
+            $form->add($f);
+        } else if(wire('input')->post->_mailchimp_test_settings) {
+            wire('session')->set('mailchimp_test_settings', 1);
+        }
+        // <<<|| TEST SETTINGS
+
+        $wrap->add($form);
         return $wrap;
     }
+    // static, because mainly it gets called from static function getModuleConfigInputfields!
+    // But also can get called from within your template files: $response = SubscribeToMailchimp::testSettings($listID);
+    public static function testSettings($list = null) {
+        $mc = wire('modules')->get('SubscribeToMailchimp');
+        $list = is_null($list) ? $mc->default_list : $list;
+        $dc = explode('-',$mc->api_key)[1]; // get the datacenter code from the api key, to use it in the api url
+        $request = "https://{$dc}.api.mailchimp.com/3.0/lists/{$list}/";
+        $errors = [];
+        try {
+            $http = new WireHttp();
+            $http->setHeaders([
+                //'Content-Type' => 'application/json',
+                'Authorization' => 'Basic '.base64_encode('user:'.$mc->api_key)
+            ]);
+            $response = $http->send($request, '', 'GET');
+            if($response === false) {
+                $err = $http->getError();
+                if('401' == substr($err, 0, 3)) {
+                    $response = "<h3 style='color: red;'>401 Unauthorized</h3>";
+                    $response .= "<p style='color: red;'><strong>Check your API Key</strong></p>";
+                } else if('404' == substr($err, 0, 3)) {
+                    $response = "<h3 style='color: red;'>404 Not Found</h3>";
+                    $response .= "<p style='color: red;'><strong>Check your List-ID</strong></p>";
+                } else {
+                    $response = '';
+                }
+                $response .= "<p style='color: red;'>".__('Mailchimp request not successful:')." {$err}</p>";
+            } else {
+                $res = json_decode($response);
+                $response = '';
+                if(isset($res->name)) $response .= "<p>List-Name: <strong>{$res->name}</strong></p>";
+                if(isset($res->id)) $response .= "<p>List-ID: <strong>{$res->id}</strong></p>";
+                $response .= "<p>";
+                foreach(['company', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'phone'] as $param) {
+                    if(isset($res->contact->$param) && !empty($res->contact->$param)) $response .= "{$param}: <strong>{$res->contact->$param}</strong><br />";
+                }
+                $response .= "</p>";
+            }
+        } catch(Exception $e) {
+            $errors[] = $e->getMessage();
+        }
+        if(count($errors)) {
+            $response = '';
+            foreach($a->getErrors() as $error) {
+                $response .= "<p style='color: red;'>{$error}</p>";
+            }
+        }
+        return $response;
+    }
+
 }
-?>
