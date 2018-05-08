@@ -43,8 +43,13 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             ]);
             $status = $this->getStatus($email, $list); // get the current subscription status of the user
             if($status !== false) {
-                if ($status == 'unsubscribed')
-                    $param['status'] = 'pending';
+                if($this->double_opt_in)
+                if ($status == 'unsubscribed') {
+                    if($this->double_opt_in)
+                        $param['status'] = 'pending';
+                    else
+                        $param['status'] = 'subscribed';
+                }
                 $response = $http->send($api . md5($email), json_encode($param), 'PATCH');
             } else {
                 if($this->double_opt_in)

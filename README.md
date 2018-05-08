@@ -46,7 +46,10 @@ If you want to permantly delete a user, you can call the delete method. Carefull
 $mc->delete('john.doe@example.com'); // Permanently deletes john.doe@example.com from the default list
 $mc->delete('john.doe@example.com', 'abcdef1356'); // Permanently deletes john.doe@example.com from the list abcdef1356
 ```
-
+If you just want to get a subscribers status, you can use the getStatus method. I do not suggest to implement this in your forms like 'this user is already subscribed' to protect the anonymity of your users. You can learn more about status labels [here](http://developer.mailchimp.com/documentation/mailchimp/guides/manage-subscribers-with-the-mailchimp-api/#check-subscription-status) 
+```PHP
+$mc->getStatus('john.doe@example.com'); // Returns the status of a user. 
+```
 ## Important Notes
 * This module does not do any data validation. Use a sever-sided validation like [Valitron](https://github.com/vlucas/valitron)
 * Make sure that you have set up your fields in your Mailchimp list. You can do it at `Settings > List fields and *|MERGE|* tags` 
@@ -81,6 +84,12 @@ If you have enabled double opt-in (it is enabled by default) you will not see th
 Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/) for more Information
 
 ## Changelog
+### 0.0.3
+_Note: You can update savely from 0.0.2 without any changes in your code_
+* Added 'getStatus' method `$mc->getStatus($email, $list = "")`
+* Added ability to resubscribe a user, if he has unsubscribed. The user will have to confirm his subscription again via double-opt-in (if not disabled)
+#### Other
+* Centralized the validation warning via a constant
 ### 0.0.2
 _Note: You can update savely from 0.0.1 without any changes in your code_
 #### New Features
