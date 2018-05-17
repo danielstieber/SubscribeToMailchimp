@@ -1,5 +1,4 @@
 <?php
-
 class SubscribeToMailchimp extends WireData implements Module, ConfigurableModule {
 
     static function getModuleInfo() {
@@ -19,18 +18,19 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             "double_opt_in" => "checked",
         );
     }
-    private function getApiBase($list) {
-        $dc = explode('-',$this->api_key)[1]; // get the datacenter code from the api key, to use it in the api url
-        return "https://".$dc.".api.mailchimp.com/3.0/lists/".$list."/members/";
+    private function getApiBase($list = null, $param = null) {
+        $dc = explode('-',$this->api_key)[1];
+        $return = "https://".$dc.".api.mailchimp.com/3.0/";
+        if(!is_null($list)) $return .= "lists/".$list."/"; // trailing slash to make further parameters possible
+        if(!is_null($param)) $return .= $param; // no trailing slash since not necessary
+        return $return;
     }
-    public function subscribe($email, array $data = [], $list = "") {
-        $param = [];
-        if(empty($list)) // use default list from module settings, if no list is provided
-            $list = $this->default_list;
+    public function subscribe($email, array $merge_fields = [], $list = NULL, array $param = []) {
+        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
         if(isset($email)) {
-            $api = $this->getApiBase($list);
+            $api = $this->getApiBase($list, 'members');
             $param['email_address'] = $email;
-            foreach ($data as $k => $v) {
+            foreach ($merge_fields as $k => $v) {
                 if(!empty(trim($v))) { // avoid to override data of existing leads with empty field values
                     $param['merge_fields'][$k] = $v;
                 }
@@ -40,7 +40,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
-            if($http->send($api . md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
+            if($http->send($api . '/' . md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
                 return true;
             } else { // create new, if update failed (=contact does not exist)
                 if($this->double_opt_in)
@@ -61,19 +61,18 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             return false;
         }
     }
-    public function unsubscribe($email, $list = "") {
+    public function unsubscribe($email, $list = NULL) {
         $param = [];
-        if(empty($list)) // use default list from module settings, if no list is provided
-            $list = $this->default_list;
+        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
         if(isset($email)) {
-            $api = $this->getApiBase($list);
+            $api = $this->getApiBase($list, 'members/' . md5($email));
             $http = new WireHttp();
             $http->setHeaders([
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
             $param['status'] = 'unsubscribed';
-            $response = $http->send($api . md5($email), json_encode($param), 'PATCH'); // update listentry with param 'unsubscribed'
+            $response = $http->send($api, json_encode($param), 'PATCH'); // update listentry with param 'unsubscribed'
             if($response !== false) {
                 return true;
             } else {
@@ -87,17 +86,16 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             return false;
         }
     }
-    public function delete($email, $list = "") {
-        if(empty($list)) // use default list from module settings, if no list is provided
-            $list = $this->default_list;
+    public function delete($email, $list = NULL) {
+        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
         if(isset($email)) {
-            $api = $this->getApiBase($list);
+            $api = $this->getApiBase($list, 'members/' . md5($email));
             $http = new WireHttp();
             $http->setHeaders([
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
-            $response = $http->send($api . md5($email), [], 'DELETE'); // delete entry
+            $response = $http->send($api, [], 'DELETE'); // delete entry
             if($response !== false) {
                 return true;
             } else {
@@ -114,7 +112,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
     public static function getModuleConfigInputfields(array $data) {
         $defaults = self::getDefaults();
         $data = array_merge($defaults, $data);
-
         $wrap = new InputfieldWrapper();
         $form = wire('modules')->get('InputfieldFieldset');
         $form->label = __('Mailchimp Configuration');
@@ -174,21 +171,19 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         $wrap->add($form);
         return $wrap;
     }
-    // static, because mainly it gets called from static function getModuleConfigInputfields!
-    // But also can get called from within your template files: $response = SubscribeToMailchimp::testSettings($listID);
+    // static, so it can get called from static function getModuleConfigInputfields, but also from within your template files: $response = SubscribeToMailchimp::testSettings($listID);
     public static function testSettings($list = null) {
         $mc = wire('modules')->get('SubscribeToMailchimp');
         $list = is_null($list) ? $mc->default_list : $list;
         $dc = explode('-',$mc->api_key)[1]; // get the datacenter code from the api key, to use it in the api url
-        $request = "https://{$dc}.api.mailchimp.com/3.0/lists/{$list}/";
+        $api = $mc->getApiBase($list);
         $errors = [];
         try {
             $http = new WireHttp();
             $http->setHeaders([
-                //'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$mc->api_key)
             ]);
-            $response = $http->send($request, '', 'GET');
+            $response = $http->send($api, '', 'GET');
             if($response === false) {
                 $err = $http->getError();
                 if('401' == substr($err, 0, 3)) {
