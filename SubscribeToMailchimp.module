@@ -13,6 +13,8 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             'singular'=> false
         ];
     }
+    const WARNING_VALIDATION = "A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.";
+
     static public function getDefaults() {
         return array(
             "double_opt_in" => "checked",
@@ -40,24 +42,31 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
-            if($http->send($api . '/' . md5($email), json_encode($param), 'PATCH')) { // try to update if contact already exists
-                return true;
-            } else { // create new, if update failed (=contact does not exist)
+            $status = $this->getStatus($email, $list); // get the current subscription status of the user
+            if($status !== false) {
+                if($this->double_opt_in)
+                if ($status == 'unsubscribed') {
+                    if($this->double_opt_in)
+                        $param['status'] = 'pending';
+                    else
+                        $param['status'] = 'subscribed';
+                }
+                $response = $http->send($api . '/' . md5($email), json_encode($param), 'PATCH');
+            } else {
                 if($this->double_opt_in)
                     $param['status'] = 'pending';
                 else
                     $param['status'] = 'subscribed';
                 $response = $http->send($api, json_encode($param), 'POST');
-                if($response !== false) {
-                    return true;
-                } else {
-                    $this->warning("Mailchimp request not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
-                    return false;
-                }
+            }
+            if($response !== false) {
+                return true;
+            } else {
+                $this->warning("Mailchimp request subscribe() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
+                return false;
             }
         } else {
-            // Log warning, if a user is able to send a form without email.
-            $this->warning("A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.");
+            $this->warning(self::WARNING_VALIDATION); // Log warning, if a user is able to send a form without email.
             return false;
         }
     }
@@ -76,13 +85,12 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             if($response !== false) {
                 return true;
             } else {
-                $this->warning("Mailchimp request not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
+                $this->warning("Mailchimp request unsubscribe() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
                 return false;
             }
             return true;
         } else {
-            // Log warning, if a user is able to send a form without email.
-            $this->warning("A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.");
+            $this->warning(self::WARNING_VALIDATION); // Log warning, if a user is able to send a form without email.
             return false;
         }
     }
@@ -99,13 +107,33 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             if($response !== false) {
                 return true;
             } else {
-                $this->warning("Mailchimp request not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
+                $this->warning("Mailchimp request delete() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
                 return false;
             }
             return true;
         } else {
-            // Log warning, if a user is able to send a form without email.
-            $this->warning("A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.");
+            $this->warning(self::WARNING_VALIDATION); // Log warning, if a user is able to send a form without email.
+            return false;
+        }
+    }
+    public function getStatus($email, $list = NULL) {
+        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
+        if(isset($email)) {
+            $api = $this->getApiBase($list, 'members/'.md5($email)); // get the api path
+            $http = new WireHttp();
+            $http->setHeaders([
+                'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key)
+            ]);
+            $response = $http->get($api); // get the entry of the given mail adress on the list
+            if($response !== false) {
+                return json_decode($response)->status; // return the subscription status
+            } else {
+                $this->warning("Mailchimp request getStatus() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
+                return false;
+            }
+            return true;
+        } else {
+            $this->warning(self::WARNING_VALIDATION); // Log warning, if a user is able to send a form without email.
             return false;
         }
     }
@@ -218,5 +246,4 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         }
         return $response;
     }
-
 }

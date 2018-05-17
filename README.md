@@ -1,8 +1,14 @@
-
 # SubscribeToMailchimp
 Lightweight module for ProcessWire that let you subscribe a user to a mailchimp list.
 
 I have only tested it with PHP7.x and Processwire 3.x.
+
+## The basic idea
+```PHP
+// Easily subscribe a user with SubscribeToMailchimp
+$mc = $modules->get("SubscribeToMailchimp");
+$mc->subscribe('john.doe@example.com');
+```
 
 ## How To Install
 1. Download the [zip file](https://github.com/danielstieber/SubscribeToMailchimp/archive/master.zip) at Github or clone directly the repo into your `site/modules`
@@ -16,35 +22,58 @@ I have only tested it with PHP7.x and Processwire 3.x.
 3. Copy your API Key and paste it in the module settings (`Processwire > Modules > Site > SubscribeToMailchimp`).
 4. Back in Mailchimp, go to the list, where you want your new subscribers.
 5. Go to `Settings > List name and defaults`. Copy the List ID an paste it into the module settings.
+6. Test your settings with the provided checkbox.
 
-![module settings](https://i.imgur.com/RcKqzEt.png)
+![module settings](https://i.imgur.com/37rJeGK.png)
 
 ## Usage
-To use the module, you need to load it into your template:
 ```PHP
+// load module into template
 $mc = $modules->get("SubscribeToMailchimp");
-```
-Now you can pass an email address to the module and it will try to edit (if the user exists) or create a new subscriber in your list.
-```PHP
+
+ // subscribe / update a user in your default list
 $mc->subscribe('john.doe@example.com');
-```
-You can also pass a data array, to add additional info.
-```PHP
+
+// add merge_fields to fill out user data, based on your list MERGE_FIELD options
+// You need to setup the fields at "Settings > List fields and *|MERGE|* tags" first!
 $mc->subscribe('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe']);
+
+// Subscribe a user to a custom list (other than default)
+$mc->subscribe('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe'], 'adcdef12345');
+
+// Work with additional parameters (not merge_field values!)
+$mc->subscribe('john.doe@example.com', NULL, NULL, [
+	'language' => 'en', // find language list here: https://kb.mailchimp.com/lists/manage-contacts/view-and-edit-contact-languages#Language-Codes
+	'vip' => true, // boolean vip status
+	'location' => [ // geo location based on lat/log coordinates 
+		'latitude' => '48.8722344',
+		'longitude', => '2.7736192'
+	],
+	'interests' => [ // subscribe user to interest categories / groups based on group id
+		'32fec3561e' => true, 
+		'63mel4395m' => false
+	]
+]);
 ```
-You can even choose an alternative list, if you don't want this subscriber in your default list.
+
+Additional methods
 ```PHP
-$mc->subscribe('john.doe@example.com', ['FNAME' => 'John', 'LNAME' => 'Doe'], 'abcdef1356'); // Subscribe to list ID abcdef1356
-```
-If you want to unsubscribe a user from a list, you can use the unsubscribe method.
-```PHP
-$mc->unsubscribe('john.doe@example.com'); // Unsubscribe john.doe@example.com from the default list
-$mc->unsubscribe('john.doe@example.com', 'abcdef1356'); // Unsubscribe john.doe@example.com from the list abcdef1356
-```
-If you want to permantly delete a user, you can call the delete method. Carefully, this step cannot be undone!
-```PHP
-$mc->delete('john.doe@example.com'); // Permanently deletes john.doe@example.com from the default list
-$mc->delete('john.doe@example.com', 'abcdef1356'); // Permanently deletes john.doe@example.com from the list abcdef1356
+// Unsubscribe a user
+$mc->unsubscribe('john.doe@example.com'); 
+
+// Unsubscribe a user from a custom list
+$mc->unsubscribe('john.doe@example.com', 'abcdef1356');
+
+// Permanently delete a user. Carefully, this step cannot be undone!
+$mc->delete('john.doe@example.com');
+
+// Get the subscription status of a user.
+$mc->getStatus('john.doe@example.com');
+
+// Static function to test your settings.
+// If no list id is provided, it will test your default list and returns a formated html result
+$mc->testSettings('list id');
+
 ```
 
 ## Important Notes
@@ -81,7 +110,16 @@ If you have enabled double opt-in (it is enabled by default) you will not see th
 Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/) for more Information
 
 ## Changelog
-### 0.0.2
+### 0.0.3 (May 17, 2018)
+* [#3](https://github.com/danielstieber/SubscribeToMailchimp/issues/3): Updated **subscribe** method. You can now add additional parameters like language or interests. Find more about this in the [Mailchimp API Documentation](http://developer.mailchimp.com/documentation/mailchimp/reference/lists/members/#create-post_lists_list_id_members)
+* [#2](https://github.com/danielstieber/SubscribeToMailchimp/pull/2): Added **getStatus** method `$mc->getStatus($email, $list = "")`
+* [#2](https://github.com/danielstieber/SubscribeToMailchimp/pull/2): Added ability to resubscribe a user, if he has unsubscribed. The user will have to confirm his subscription again via double-opt-in (if not disabled)
+* [#1](https://github.com/danielstieber/SubscribeToMailchimp/pull/1): Added **testSetting** method and a beautiful way to test your settings right in the module settings pages - Big thanks to [@horst-n](https://github.com/horst-n)
+
+* Centralized the validation warning via a constant
+* Updated the **getApiBase** to be more flexible with different API calls
+
+### 0.0.2 (April 24, 2018)
 _Note: You can update savely from 0.0.1 without any changes in your code_
 #### New Features
 * Added 'Unsubscribe' method `$mc->unsubscribe($email, $list = "")`
@@ -92,7 +130,6 @@ _Note: You can update savely from 0.0.1 without any changes in your code_
 * Changed the way, the base url for the api gets called
 
 \*I have only tested it with PHP 7.x so far, so use on owners risk :)
-
 
 ## Contribution
 Any suggestions? Join the [Discussion](https://processwire.com/talk/topic/19023-subscribe-to-mailchimp/?tab=comments#comment-165449) in the ProcessWire Forums or contribute directly on Github.
