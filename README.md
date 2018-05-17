@@ -110,6 +110,7 @@ If you have enabled double opt-in (it is enabled by default) you will not see th
 Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/) for more Information
 
 ## Changelog
+_Until now, you can update from every version without changing your code_
 ### 0.0.3 (May 17, 2018)
 * [#3](https://github.com/danielstieber/SubscribeToMailchimp/issues/3): Updated **subscribe** method. You can now add additional parameters like language or interests. Find more about this in the [Mailchimp API Documentation](http://developer.mailchimp.com/documentation/mailchimp/reference/lists/members/#create-post_lists_list_id_members)
 * [#2](https://github.com/danielstieber/SubscribeToMailchimp/pull/2): Added **getStatus** method `$mc->getStatus($email, $list = "")`
@@ -120,13 +121,9 @@ Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/
 * Updated the **getApiBase** to be more flexible with different API calls
 
 ### 0.0.2 (April 24, 2018)
-_Note: You can update savely from 0.0.1 without any changes in your code_
-#### New Features
 * Added 'Unsubscribe' method `$mc->unsubscribe($email, $list = "")`
 * Added 'Delete' method `$mc->delete($email, $list = "")`
-#### Bug Fixes and compatibility changes
 * Removed type declarations to be compatible with PHP 5.1* (thanks to wbmnfktr)
-#### Other
 * Changed the way, the base url for the api gets called
 
 \*I have only tested it with PHP 7.x so far, so use on owners risk :)
