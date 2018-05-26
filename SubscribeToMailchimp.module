@@ -88,7 +88,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 $this->warning("Mailchimp request unsubscribe() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
                 return false;
             }
-            return true;
         } else {
             $this->warning(self::WARNING_VALIDATION); // Log warning, if a user is able to send a form without email.
             return false;
@@ -110,7 +109,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 $this->warning("Mailchimp request delete() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
                 return false;
             }
-            return true;
         } else {
             $this->warning(self::WARNING_VALIDATION); // Log warning, if a user is able to send a form without email.
             return false;
@@ -131,7 +129,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 $this->warning("Mailchimp request getStatus() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
                 return false;
             }
-            return true;
         } else {
             $this->warning(self::WARNING_VALIDATION); // Log warning, if a user is able to send a form without email.
             return false;
