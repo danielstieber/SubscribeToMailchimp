@@ -203,7 +203,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
     public static function testSettings($list = null) {
         $mc = wire('modules')->get('SubscribeToMailchimp');
         $list = is_null($list) ? $mc->default_list : $list;
-        $dc = explode('-',$mc->api_key)[1]; // get the datacenter code from the api key, to use it in the api url
         $api = $mc->getApiBase($list);
         $errors = [];
         try {
