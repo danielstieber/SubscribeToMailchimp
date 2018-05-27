@@ -111,6 +111,10 @@ Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/
 
 ## Changelog
 _Until now, you can update from every version without changing your code_
+### 0.0.4 (May 27, 2018)
+* [#6](https://github.com/danielstieber/SubscribeToMailchimp/pull/6): Fixed a bug, where you couldn't use the 'ADDRESS' merge field and removed more unused lines - Big thanks to [@ml-eds](https://github.com/ml-eds) for the quick fix!
+* [#4](https://github.com/danielstieber/SubscribeToMailchimp/issues/4): Deleted unused line
+
 ### 0.0.3 (May 17, 2018)
 * [#3](https://github.com/danielstieber/SubscribeToMailchimp/issues/3): Updated **subscribe** method. You can now add additional parameters like language or interests. Find more about this in the [Mailchimp API Documentation](http://developer.mailchimp.com/documentation/mailchimp/reference/lists/members/#create-post_lists_list_id_members)
 * [#2](https://github.com/danielstieber/SubscribeToMailchimp/pull/2): Added **getStatus** method `$mc->getStatus($email, $list = "")`

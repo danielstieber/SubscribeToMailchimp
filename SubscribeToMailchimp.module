@@ -5,7 +5,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         return [
             'title'   => 'Subscribe to Mailchimp',
             'summary' => 'Subscribe, update, unsubscribe or delete a user in your Mailchimp mailing list.',
-            'version' => '0.0.3',
+            'version' => '0.0.4',
             'author'  => 'danielstieber',
             'href'    => 'https://github.com/danielstieber/SubscribeToMailchimp',
             'icon'    => 'address-card',
@@ -34,7 +34,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             $param['email_address'] = $email;
 
             foreach ($merge_fields as $k => $v) {
-                if(is_array($v) && count($v) > 0) { //ADDRESS merge_field (cf. https://us1.api.mailchimp.com/schema/3.0/Lists/Members/MergeField.json)
+                if(is_array($v) && count($v) > 0) { // ADDRESS merge_field (cf. https://us1.api.mailchimp.com/schema/3.0/Lists/Members/MergeField.json)
                     foreach ($v as $k2 => $v2) {
                         if (!empty(trim($v2))) {
                             $param['merge_fields'][$k][$k2] = $v2;
@@ -44,7 +44,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                     $param['merge_fields'][$k] = $v;
                 }
             }
-
 
             $http = new WireHttp();
             $http->setHeaders([
