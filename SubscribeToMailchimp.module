@@ -34,16 +34,17 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             $param['email_address'] = $email;
 
             foreach ($merge_fields as $k => $v) {
-                if(!empty(trim($v))) { // avoid to override data of existing leads with empty field values
-                    $param['merge_fields'][$k] = $v;
-                } else if(is_array($v)) { //ADDRESS merge_field!
+                if(is_array($v) && count($v) > 0) { //ADDRESS merge_field (cf. https://us1.api.mailchimp.com/schema/3.0/Lists/Members/MergeField.json)
                     foreach ($v as $k2 => $v2) {
                         if (!empty(trim($v2))) {
                             $param['merge_fields'][$k][$k2] = $v2;
                         }
                     }
+                } else if(!empty(trim($v))) { // avoid to override data of existing leads with empty field values
+                    $param['merge_fields'][$k] = $v;
                 }
             }
+
 
             $http = new WireHttp();
             $http->setHeaders([
