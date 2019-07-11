@@ -4,8 +4,8 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
     static function getModuleInfo() {
         return [
             'title'   => 'Subscribe to Mailchimp',
-            'summary' => 'Subscribe, update, unsubscribe or delete a user in your Mailchimp mailing list.',
-            'version' => '0.0.4',
+            'summary' => 'Subscribe, update, unsubscribe or delete a user in your Mailchimp mailing audience.',
+            'version' => '0.0.5',
             'author'  => 'danielstieber',
             'href'    => 'https://github.com/danielstieber/SubscribeToMailchimp',
             'icon'    => 'address-card',
@@ -28,7 +28,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         return $return;
     }
     public function subscribe($email, array $merge_fields = [], $list = NULL, array $param = []) {
-        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
+        $list = is_null($list) ? $this->default_list : $list; // use default audience from module settings, if no audience is provided
         if(isset($email)) {
             $api = $this->getApiBase($list, 'members');
             $param['email_address'] = $email;
@@ -52,7 +52,6 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             ]);
             $status = $this->getStatus($email, $list); // get the current subscription status of the user
             if($status !== false) {
-                if($this->double_opt_in)
                 if ($status == 'unsubscribed') {
                     if($this->double_opt_in)
                         $param['status'] = 'pending';
@@ -80,7 +79,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
     }
     public function unsubscribe($email, $list = NULL) {
         $param = [];
-        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
+        $list = is_null($list) ? $this->default_list : $list; // use default audience from module settings, if no audience is provided
         if(isset($email)) {
             $api = $this->getApiBase($list, 'members/' . md5($email));
             $http = new WireHttp();
@@ -102,7 +101,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         }
     }
     public function delete($email, $list = NULL) {
-        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
+        $list = is_null($list) ? $this->default_list : $list; // use default audience from module settings, if no audience is provided
         if(isset($email)) {
             $api = $this->getApiBase($list, 'members/' . md5($email));
             $http = new WireHttp();
@@ -123,18 +122,17 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         }
     }
     public function getStatus($email, $list = NULL) {
-        $list = is_null($list) ? $this->default_list : $list; // use default list from module settings, if no list is provided
+        $list = is_null($list) ? $this->default_list : $list; // use default audience from module settings, if no audience is provided
         if(isset($email)) {
             $api = $this->getApiBase($list, 'members/'.md5($email)); // get the api path
             $http = new WireHttp();
             $http->setHeaders([
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key)
             ]);
-            $response = $http->get($api); // get the entry of the given mail adress on the list
+            $response = $http->get($api); // get the entry of the given mail adress on the audience
             if($response !== false) {
                 return json_decode($response)->status; // return the subscription status
             } else {
-                $this->warning("Mailchimp request getStatus() not successful: " . $http->getError(), Notice::log); // Log warning in Processwire backend
                 return false;
             }
         } else {
@@ -152,7 +150,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         $form->collapsed = wire('session')->mailchimp_test_settings ? Inputfield::collapsedNo : Inputfield::collapsedPopulated;
         $inputfields = [
             'api_key' => __('API Key'),
-            'default_list' => __('Default list (can be overwritten by every form)'),
+            'default_list' => __('Default audience id (can be overwritten by every form)'),
         ];
         $checkboxfields = [
             'double_opt_in' => __('Use double opt in. (Recommended)'),
@@ -180,7 +178,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         $f = wire('modules')->get('InputfieldCheckbox');
         $f->attr('name', '_mailchimp_test_settings');
         $f->label = __('Test your current settings!');
-        $f->description = __('Check this box and press save, to test the API Key and default list settings!');
+        $f->description = __('Check this box and press save, to test the API Key and default audience settings!');
         $f->attr('value', 1);
         $f->attr('checked', '');
         $f->icon = 'heartbeat';
@@ -223,7 +221,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                     $response .= "<p style='color: red;'><strong>Check your API Key</strong></p>";
                 } else if('404' == substr($err, 0, 3)) {
                     $response = "<h3 style='color: red;'>404 Not Found</h3>";
-                    $response .= "<p style='color: red;'><strong>Check your List-ID</strong></p>";
+                    $response .= "<p style='color: red;'><strong>Check your Audience-ID</strong></p>";
                 } else {
                     $response = '';
                 }
@@ -231,8 +229,8 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
             } else {
                 $res = json_decode($response);
                 $response = '';
-                if(isset($res->name)) $response .= "<p>List-Name: <strong>{$res->name}</strong></p>";
-                if(isset($res->id)) $response .= "<p>List-ID: <strong>{$res->id}</strong></p>";
+                if(isset($res->name)) $response .= "<p>Audience-Name: <strong>{$res->name}</strong></p>";
+                if(isset($res->id)) $response .= "<p>Audience-ID: <strong>{$res->id}</strong></p>";
                 $response .= "<p>";
                 foreach(['company', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'phone'] as $param) {
                     if(isset($res->contact->$param) && !empty($res->contact->$param)) $response .= "{$param}: <strong>{$res->contact->$param}</strong><br />";
