@@ -64,7 +64,7 @@ $mc->unsubscribe('john.doe@example.com');
 // Unsubscribe a user from a custom audience
 $mc->unsubscribe('john.doe@example.com', 'abcdef1356');
 
-// Permanently delete a user. Carefully, this step cannot be undone!
+// Archives a user. Archived users can be found in your audience at "manage contacts -> view archived contacts"
 $mc->delete('john.doe@example.com');
 
 // Get the subscription status of a user.
@@ -111,8 +111,13 @@ Go to [Mailchimps Error Glossary](https://developer.mailchimp.com/documentation/
 
 ## Changelog
 _Until now, you can update from every version without changing your code_
-### 0.0.5 (Juli 11, 2019)
-* [#8](https://github.com/danielstieber/SubscribeToMailchimp/issues/8): Fixed a bug, that prevents re-subscribing, if double-top in was disabled – thanks to [@jliebermann](https://github.com/jliebermann) for pointing this out
+### 0.0.6 (May 19, 2020)
+* [#10](https://github.com/danielstieber/SubscribeToMailchimp/issues/9): Fixed an error regarding raw data option with CURL – thanks to [@ml-eds](https://github.com/ml-eds) for the fix!
+* [#9](https://github.com/danielstieber/SubscribeToMailchimp/issues/9): Fixed a bug where users couldn't be subscribed when not found via getStatus – thanks [@ml-eds](https://github.com/ml-eds) for the fix!
+* Updated description for delete() method, removed some typos
+
+### 0.0.5 (July 11, 2019)
+* [#8](https://github.com/danielstieber/SubscribeToMailchimp/issues/8): Fixed a bug, that prevents re-subscribing, if double-opt in was disabled – thanks to [@jliebermann](https://github.com/jliebermann) for pointing this out
 * [#7](https://github.com/danielstieber/SubscribeToMailchimp/issues/7): Removed the 'warning', that was logged appeared when trying to add a new subscriber – thanks to [@horst-n](https://github.com/horst-n) for mentioning
 * Updated wording from 'list' to 'audience' ([Introducing Audience](https://mailchimp.com/resources/introducing-your-new-audience-dashboard/))
 

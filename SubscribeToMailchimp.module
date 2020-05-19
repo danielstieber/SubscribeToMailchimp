@@ -5,7 +5,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         return [
             'title'   => 'Subscribe to Mailchimp',
             'summary' => 'Subscribe, update, unsubscribe or delete a user in your Mailchimp mailing audience.',
-            'version' => '0.0.5',
+            'version' => '0.0.6',
             'author'  => 'danielstieber',
             'href'    => 'https://github.com/danielstieber/SubscribeToMailchimp',
             'icon'    => 'address-card',
@@ -14,12 +14,15 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
         ];
     }
     const WARNING_VALIDATION = "A user managed to send a form without an email address. Please check your form validation! A server-sided validation (e.g. via Valitron) is strongly recommended.";
-
     static public function getDefaults() {
         return array(
             "double_opt_in" => "checked",
         );
     }
+    protected $httpPatchOptions = [
+        'use' => 'socket',
+        'fallback' => 'socket' // false, 'auto', 'socket' or 'curl'
+    ];
     private function getApiBase($list = null, $param = null) {
         $dc = explode('-',$this->api_key)[1];
         $return = "https://".$dc.".api.mailchimp.com/3.0/";
@@ -51,14 +54,14 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
             $status = $this->getStatus($email, $list); // get the current subscription status of the user
-            if($status !== false) {
+            if($status !== false && $status !== 404) {
                 if ($status == 'unsubscribed') {
                     if($this->double_opt_in)
                         $param['status'] = 'pending';
                     else
                         $param['status'] = 'subscribed';
                 }
-                $response = $http->send($api . '/' . md5($email), json_encode($param), 'PATCH');
+                $response = $http->send($api . '/' . md5($email), json_encode($param), 'PATCH', $this->httpPatchOptions);
             } else {
                 if($this->double_opt_in)
                     $param['status'] = 'pending';
@@ -88,7 +91,7 @@ class SubscribeToMailchimp extends WireData implements Module, ConfigurableModul
                 'Authorization' => 'Basic '.base64_encode('user:'.$this->api_key),
             ]);
             $param['status'] = 'unsubscribed';
-            $response = $http->send($api, json_encode($param), 'PATCH'); // update listentry with param 'unsubscribed'
+            $response = $http->send($api, json_encode($param), 'PATCH', $this->httpPatchOptions); // update listentry with param 'unsubscribed'
             if($response !== false) {
                 return true;
             } else {
